@@ -6,7 +6,7 @@ class Variables:
     xyvariables = XYVariables()
     bbgfields = BBGFields()
 
-    x_cols_to_process = xyvariables.X_SELECTED
+    x_cols_to_process_cn = xyvariables.X_SELECTED_CN
     y_cols = xyvariables.Y_SELECTED
     industry_cols = xyvariables.INDUSTRY
     industry_info_cols = xyvariables.INDUSTRY_TIC_INFO

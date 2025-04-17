@@ -11,12 +11,16 @@ class Evaluator(EvaluationABC):
         self.strategy = strategy
 
     def evaluate(self,
-                 X_test: pd.DataFrame,
+                 y_pred: np.array,
+                 y_proba: np.array,
                  y_test: pd.Series,
                  mlflow_model_name: str,
-                 mlflow_model_run_id: str) -> None:
+                 mlflow_model_run_id: str,
+                 average: str) -> None:
 
-        return self.strategy.evaluate(X_test,
+        return self.strategy.evaluate(y_pred,
+                                      y_proba,
                                       y_test,
                                       mlflow_model_name,
-                                      mlflow_model_run_id)
+                                      mlflow_model_run_id,
+                                      average)

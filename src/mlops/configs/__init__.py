@@ -8,6 +8,6 @@ __all__ = [
     "XYVariables",
     "MysqlConfig",
     "Variables",
-    "TrainingConfig",
+    "LGBMTrainingConfig",
     "TrainingVariables"
 ]
