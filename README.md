@@ -178,3 +178,13 @@ zenml stack update mlflow_stack -o mlops_airflow
 cd /path/MLOps-PDModel
 python src/mlops/airflow_inference.py
 ```
+
+## Acknowledgments
+- This project uses:
+  - [ZenML](https://www.zenml.io/)
+  - [LightGBM](https://github.com/microsoft/LightGBM)
+  - [MLflow](https://mlflow.org/)
+  - [Airflow](https://airflow.apache.org/)
+  - [Evidently AI](https://github.com/evidentlyai/evidently)
+  - [MINIO](https://min.io/)
+  - [Slack](https://slack.com/)
