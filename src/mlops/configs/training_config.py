@@ -13,7 +13,7 @@ class LGBMTrainingConfig:
     LGBM_PARAMS_GRID = {
         'learning_rate': [0.01, 0.1],
         'num_leaves': [31, 64],
-        'max_depth': [5, 10],
+        'max_depth': [3, 4, 5],
         'n_estimators': [100, 200]
     }
     LGBM_PARAMS = {

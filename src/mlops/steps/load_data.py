@@ -41,7 +41,7 @@ experiment_tracker = Client().active_stack.experiment_tracker
 @step(enable_cache=False, experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
 def load_data(data_path) -> pd.DataFrame:
     print('loading data')
-    df = DataLoader().load_data(
+    df = DataLoader.load_data(
         data_path=data_path
     )
     return df

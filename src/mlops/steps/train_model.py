@@ -1,6 +1,6 @@
 from src.mlops.logger.utils.logger import Log
 from src.mlops.training import Trainer, MultivariateTraining
-from src.mlops.model import RFRegression, LGBRegression, LGBClassifier
+from src.mlops.model import LGBClassifier
 from src.mlops.configs import Variables
 # from src.mlops.materializer import CSMaterializer
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -10,7 +10,6 @@ from tqdm import tqdm
 import os
 import pandas as pd
 import pickle
-import h2o
 from zenml.config import ResourceSettings
 from zenml import step
 from zenml.client import Client

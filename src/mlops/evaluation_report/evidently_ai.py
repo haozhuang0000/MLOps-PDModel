@@ -18,7 +18,6 @@ from evidently.future.metric_types import SingleValueCalculation
 from evidently.future.metric_types import MetricId
 from evidently.future.metric_types import SingleValueMetric
 from evidently.future.metric_types import TResult
-from evidently.future.preset_types import PresetResult
 from evidently.future.metric_types import BoundTest
 from evidently.future.tests import Reference, eq
 
@@ -31,9 +30,9 @@ import plotly.graph_objects as go
 
 class ArMetric(SingleValueMetric):
     y_true: str
-    y_pred_probas_0: str
+    # y_pred_probas_0: str
     y_pred_probas_1: str
-    y_pred_probas_2: str
+    # y_pred_probas_2: str
 
     def _default_tests(self, context: Context) -> List[BoundTest]:
         return [eq(0).bind_single(self.get_fingerprint())]
@@ -45,23 +44,23 @@ class ArMetric(SingleValueMetric):
 class ArMetricImplementation(SingleValueCalculation[ArMetric]):
     def calculate(self, context: Context, current_data: Dataset, reference_data: Optional[Dataset]) -> SingleValue:
         y_true = current_data.column(self.metric.y_true).data
-        y_pred_0 = current_data.column(self.metric.y_pred_probas_0).data
+        # y_pred_0 = current_data.column(self.metric.y_pred_probas_0).data
         y_pred_1 = current_data.column(self.metric.y_pred_probas_1).data
-        y_pred_2 = current_data.column(self.metric.y_pred_probas_2).data
-        y_pred = pd.concat([pd.DataFrame(y_pred_0), pd.DataFrame(y_pred_1), pd.DataFrame(y_pred_2)], axis=1)
+        # y_pred_2 = current_data.column(self.metric.y_pred_probas_2).data
+        # y_pred = pd.concat([pd.DataFrame(y_pred_0), pd.DataFrame(y_pred_1), pd.DataFrame(y_pred_2)], axis=1)
         # Binarize the true labels: 1 if class is 1, else 0
         y_binary = (y_true.astype(int) == 1).astype(int)
 
         y_true_ref = reference_data.column(self.metric.y_true).data
-        y_pred_ref_0 = reference_data.column(self.metric.y_pred_probas_0).data
+        # y_pred_ref_0 = reference_data.column(self.metric.y_pred_probas_0).data
         y_pred_ref_1 = reference_data.column(self.metric.y_pred_probas_1).data
-        y_pred_ref_2 = reference_data.column(self.metric.y_pred_probas_2).data
-        y_pred_ref = pd.concat([pd.DataFrame(y_pred_ref_0), pd.DataFrame(y_pred_ref_1), pd.DataFrame(y_pred_ref_2)], axis=1)
+        # y_pred_ref_2 = reference_data.column(self.metric.y_pred_probas_2).data
+        # y_pred_ref = pd.concat([pd.DataFrame(y_pred_ref_0), pd.DataFrame(y_pred_ref_1), pd.DataFrame(y_pred_ref_2)], axis=1)
         y_binary_ref = (y_true_ref.astype(int) == 1).astype(int)
 
         # Compute AUC
-        auc_A = roc_auc_score(y_binary, y_pred['1'])
-        auc_B = roc_auc_score(y_binary_ref, y_pred_ref["1"])
+        auc_A = roc_auc_score(y_binary, y_pred_1)
+        auc_B = roc_auc_score(y_binary_ref, y_pred_ref_1)
         diff = auc_B - auc_A
 
         # Compute AR
@@ -71,8 +70,8 @@ class ArMetricImplementation(SingleValueCalculation[ArMetric]):
         result = self.result(value=diff)
 
         # Compute ROC curves
-        fpr_A, tpr_A, _ = roc_curve(y_binary, y_pred['1'])
-        fpr_B, tpr_B, _ = roc_curve(y_binary_ref, y_pred_ref["1"])
+        fpr_A, tpr_A, _ = roc_curve(y_binary, y_pred_1)
+        fpr_B, tpr_B, _ = roc_curve(y_binary_ref, y_pred_ref_1)
 
         # --- First Figure: ROC Curve ---
         # Plot ROC curves
@@ -82,14 +81,14 @@ class ArMetricImplementation(SingleValueCalculation[ArMetric]):
             x=fpr_A,
             y=tpr_A,
             mode='lines',
-            name=f'Model A 0 vs 1(AUC={auc_A:.3f})'
+            name=f'ML Model 0 vs 1(AUC={auc_A:.3f})'
         ))
 
         roc_figure.add_trace(go.Scatter(
             x=fpr_B,
             y=tpr_B,
             mode='lines',
-            name=f'Model B 0 vs 1(AUC={auc_B:.3f})'
+            name=f'PD Model 0 vs 1(AUC={auc_B:.3f})'
         ))
 
         roc_figure.update_layout(
@@ -104,7 +103,7 @@ class ArMetricImplementation(SingleValueCalculation[ArMetric]):
         ar_figure = go.Figure()
 
         ar_figure.add_trace(go.Bar(
-            x=["Model A", "Model B"],
+            x=["ML Model", "PD Model"],
             y=[ar_A, ar_B],
             name="Accuracy Ratio",
             text=[f"{ar_A:.3f}", f"{ar_B:.3f}"],

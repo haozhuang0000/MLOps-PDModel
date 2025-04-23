@@ -51,7 +51,7 @@ def train_pipeline():
     train_val_splits, train_df, final_test = split_data(df)
     trained_results = train_model(train_val_splits, train_df)
     ml_result = evaluate_model(final_test, trained_results)
-    evidently_eval_report(ml_result)
+    evidently_eval_report(ml_result, train_df, final_test)
 
     print(
         "Now run \n "

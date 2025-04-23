@@ -1,5 +1,5 @@
 from src.mlops.logger import LoggerDescriptor
-from src.mlops.data_splitting import DataSplitter, BBGDataSplitter, PDDataSplitter
+from src.mlops.data_splitting import DataSplitter, PDDataSplitter
 # from src.mlops.materializer import CSMaterializer
 from typing import Tuple, List, Union, Dict
 from typing_extensions import Annotated

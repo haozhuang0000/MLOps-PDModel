@@ -1,5 +1,5 @@
 from src.mlops.abstractions import TrainingABC
-from src.mlops.model import ModelCaller, RFRegression, LGBRegression, LGBClassifier
+from src.mlops.model import LGBClassifier, ModelCaller
 from typing import Union, Tuple, List, Dict
 import pandas as pd
 import numpy as np
@@ -10,7 +10,7 @@ class MultivariateTrainingHelper:
     def __init__(self,
                  train_val_splits: List[Dict[str, pd.DataFrame]],
                  train_df: pd.DataFrame,
-                 model: Union[RFRegression, LGBRegression]):
+                 model: Union[LGBClassifier]):
 
         self.train_val_splits = train_val_splits
         self.train_df = train_df
