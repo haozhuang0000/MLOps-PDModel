@@ -14,12 +14,25 @@ conda activate mlops
 pip install -r requirements.txt
 ```
 
-## Prerequisites
+## Configuration
 
-### 1. MySQL Database
+### .env File Setup
+Create a .env file in the root directory of the project and configure the following variables:
 
-### 2. Minio setup steps- artifact storage
-Add the line to ~/.bashrc
+In my case, I need to read files from Windows Files System, if you aren't, you can modify the code for all load data part, and IGNORE FILEIP, FILEIP_USERNAME, FILEIP_PASSWORD  
+```
+FILEIP=
+FILEIP_USERNAME=
+FILEIP_PASSWORD=
+
+MYSQL_USER=
+MYSQL_PASS=
+MySQL_HOST=
+```
+
+### Environment Variable Setup on Local Machine
+
+#### Linux
 ```bash
 nano ~/.bashrc
 
@@ -27,7 +40,44 @@ nano ~/.bashrc
 export MLFLOW_S3_ENDPOINT_URL=http://<YOUR_SERVER_ADDRESS>:9000
 export AWS_ACCESS_KEY_ID=<YOUR_MINIO_ROOT_USER>
 export AWS_SECRET_ACCESS_KEY=<YOUR_MINIO_ROOT_PASSWORD>
+
+# << Airflow >>
+export AIRFLOW_HOME=<YOUR_PATH_TO_AIRFLOW_HOME>
+export ZENML_LOCAL_STORES_PATH=<YOUR_PATH_TO_ZENML>
+export ZENML_CONFIG_PATH=<YOUR_PATH_TO_ZENML>
+
+source ~/.bashrc
 ```
+
+#### Windows
+
+- Press Win + R, type sysdm.cpl, and press Enter.
+
+- Go to the Advanced tab and click Environment Variables.
+
+- Under User variables or System variables, click New... to add the following:
+
+```
+MLFLOW_S3_ENDPOINT_URL=http://<YOUR_SERVER_ADDRESS>:9000
+AWS_ACCESS_KEY_ID=<YOUR_MINIO_ROOT_USER>
+AWS_SECRET_ACCESS_KEY=<YOUR_MINIO_ROOT_PASSWORD>
+
+AIRFLOW_HOME=<YOUR_PATH_TO_AIRFLOW_HOME>
+ZENML_LOCAL_STORES_PATH=<YOUR_PATH_TO_ZENML>
+ZENML_CONFIG_PATH=<YOUR_PATH_TO_ZENML>
+```
+
+
+## Prerequisites
+
+### 1. MySQL Database
+
+### 2. Docker
+- Linux: https://docs.docker.com/desktop/setup/install/linux/
+- Windows: https://docs.docker.com/desktop/setup/install/windows-install/
+
+### 3. Minio setup steps- artifact storage
+Add the line to ~/.bashrc
 
 ```
 cd <PATH_TO_MINIO>
@@ -39,21 +89,16 @@ MINIO_ROOT_USER=<YOUR_MINIO_ROOT_USER> MINIO_ROOT_PASSWORD=<YOUR_MINIO_ROOT_PASS
 1. Log into http://<YOUR_SERVER_ADDRESS>:9000
 2. Create a bucket <BUCKET_NAME>
 
-### 3. Mlflow setup steps - artifact tracker
+### 4. Mlflow setup steps - artifact tracker
 
 ```
 conda activate mlops
 mlflow server --host 0.0.0.0 --port 8885 --artifacts-destination s3://<BUCKET_NAME>
 ```
 
-### 4. Airflow setup steps - automation
+### 5. Airflow setup steps - automation
 
 ```bash
-# << Airflow >>
-export AIRFLOW_HOME=<YOUR_PATH_TO_AIRFLOW_HOME>
-export ZENML_LOCAL_STORES_PATH=<YOUR_PATH_TO_ZENML>
-export ZENML_CONFIG_PATH=<YOUR_PATH_TO_ZENML>
-
 airflow db init
 airflow users create \
   --username <AIRFLOW_USER> \
@@ -75,7 +120,7 @@ Example:
 ```
 default_timezone = Asia/Singapore
 ```
-### 5. Slack setup steps - alerter
+### 6. Slack setup steps - alerter
 1. Go to: https://slack.com/ and create <YOUR_WORKSPACE>
 2. Go to: https://api.slack.com/apps
 2. Create New App -> From a manifest
@@ -139,22 +184,6 @@ zenml stack register mlflow_stack \
      -e mlflow_tracker\
      -al slack_alerter
      --set
-```
-
-## Configuration
-
-### .env File Setup
-Create a .env file in the root directory of the project and configure the following variables:
-
-In my case, I need to read files from Windows Files System, if you aren't, you can modify the code for all load data part, and IGNORE FILEIP, FILEIP_USERNAME, FILEIP_PASSWORD  
-```
-FILEIP=
-FILEIP_USERNAME=
-FILEIP_PASSWORD=
-
-MYSQL_USER=
-MYSQL_PASS=
-MySQL_HOST=
 ```
 
 ## Usage
