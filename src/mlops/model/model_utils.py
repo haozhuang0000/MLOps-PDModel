@@ -1,5 +1,7 @@
 from src.mlops.evaluation import evaluate_ovo
-from typing import Literal
+from src.mlops.logger.utils.logger import Log
+import os
+from typing import Literal, List, Tuple, Dict
 import mlflow
 import pandas as pd
 import numpy as np
@@ -7,6 +9,10 @@ from sklearn.metrics import (
     roc_auc_score, f1_score, precision_score, recall_score,
     make_scorer
 )
+from sklearn.utils.class_weight import compute_class_weight
+from lightgbm import LGBMClassifier
+import numpy as np
+from sklearn.metrics import log_loss
 
 def mlflow_insample_metrics_log(
         final_model,
@@ -57,4 +63,42 @@ def mlflow_insample_metrics_log(
             print(f'{classvs}_{metric}', metric_value)
             mlflow.log_metric(f'insample_{classvs}_{metric}', metric_value)
 
+def evaluate_params(combo: Tuple,
+                        param_keys: List[str],
+                        train_val_splits: List[Dict[str, pd.DataFrame]],
+                        features: List[str],
+                        additional_params: dict):
+        logger = Log(f"{os.path.basename(__file__)}").getlog()
+        params = dict(zip(param_keys, combo))
+        logger.info(f"Evaluating with params: {params}")
+        params.update(additional_params)
 
+        loss_list = []
+
+        for split in train_val_splits:
+            train_df = split['train']
+            val_df = split['val']
+
+            X_train = train_df[features]
+            y_train = train_df['Y']
+            X_val = val_df[features]
+            y_val = val_df['Y']
+
+            classes = np.array([0, 1, 2])
+            class_weights = compute_class_weight(class_weight='balanced', classes=classes, y=y_train)
+            sample_weights = y_train.map(dict(zip(classes, class_weights)))
+            sample_weights = sample_weights.values
+            model = LGBMClassifier(**params)
+            model.fit(
+                X_train, y_train,
+                sample_weight=sample_weights,
+                eval_metric='multi_logloss',
+            )
+
+            preds_proba = model.predict_proba(X_val)
+            loss = log_loss(y_val, preds_proba)
+            print(f"round loss: {loss}")
+            loss_list.append(loss)
+
+        avg_loss = np.mean(loss_list)
+        return avg_loss, params, model

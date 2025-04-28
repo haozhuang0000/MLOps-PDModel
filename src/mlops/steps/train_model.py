@@ -13,7 +13,7 @@ import pickle
 from zenml.config import ResourceSettings
 from zenml import step
 from zenml.client import Client
-experiment_tracker = Client().active_stack.experiment_tracker
+# experiment_tracker = Client().active_stack.experiment_tracker
 
 # @step(experiment_tracker=experiment_tracker.name)
 # def train_model(companyID_df_postConstru_dict: Dict):
@@ -43,37 +43,37 @@ experiment_tracker = Client().active_stack.experiment_tracker
 #         results[id_bb_unique] = company_results
 #     return results
 
-@step(experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
+@step(experiment_tracker=Client().active_stack.experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
 def train_model(train_val_splits: List[Dict[str, pd.DataFrame]], train_df: pd.DataFrame):
 
     logger = Log(f"{os.path.basename(__file__)}").getlog()
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../data/output'))
-    file_path = os.path.join(base_dir, "training_results_auto.pkl")
-    if not os.path.exists(file_path):
-        # models = [H2OAuto(), LGBRegression(), RFRegression()]
-        cali_group = "CN"
-        models = [LGBClassifier(cali_group=cali_group)]
-        company_results = {}
-        for model in models:
-            model_name = model.__class__.__name__
-            logger.info(f"Training model: **{model_name}**")
-            trained_model, mlflow_model_name, mlflow_model_run_id = Trainer(
-                strategy=MultivariateTraining()).run_training(train_val_splits=train_val_splits, train_df=train_df,
-                model=model)
+    # base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../data/output'))
+    # file_path = os.path.join(base_dir, "training_results_auto_test_no_required.pkl")
+    # if not os.path.exists(file_path):
+    # models = [H2OAuto(), LGBRegression(), RFRegression()]
+    cali_group = "CN"
+    models = [LGBClassifier(cali_group=cali_group)]
+    company_results = {}
+    for model in models:
+        model_name = model.__class__.__name__
+        logger.info(f"Training model: **{model_name}**")
+        trained_model, mlflow_model_name, mlflow_model_run_id = Trainer(
+            strategy=MultivariateTraining()).run_training(train_val_splits=train_val_splits, train_df=train_df,
+            model=model)
 
-            model_results = {
-                "cali_group": cali_group,
-                "model": trained_model,
-                "mlflow_model_name": mlflow_model_name,
-                "mlflow_model_run_id": mlflow_model_run_id
-            }
-            company_results[model_name] = model_results
-        with open(file_path, "wb") as file:
-            pickle.dump(company_results, file)
-    else:
-        logger.info("Loading existing training results...")
-        with open(file_path, "rb") as file:
-            company_results = pickle.load(file)
+        model_results = {
+            "cali_group": cali_group,
+            "model": trained_model,
+            "mlflow_model_name": mlflow_model_name,
+            "mlflow_model_run_id": mlflow_model_run_id
+        }
+        company_results[model_name] = model_results
+    # with open(file_path, "wb") as file:
+    #     pickle.dump(company_results, file)
+    # else:
+    #     logger.info("Loading existing training results...")
+    #     with open(file_path, "rb") as file:
+    #         company_results = pickle.load(file)
     return company_results
 
 # @step(experiment_tracker=experiment_tracker.name)
