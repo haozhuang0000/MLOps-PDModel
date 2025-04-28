@@ -8,7 +8,7 @@ else:
 
 class LGBMTrainingConfig:
 
-    N_ITERS = 2
+    N_ITERS = -1
     CROSS_VALIDATION = True
     LGBM_PARAMS_GRID = {
         'learning_rate': [0.01, 0.1],
@@ -24,5 +24,5 @@ class LGBMTrainingConfig:
         'gpu_platform_id': 0,
         'gpu_device_id': gpu_id,
         'boosting_type': 'gbdt',
-        'verbosity': 1,
+        'verbosity': -1,
     }

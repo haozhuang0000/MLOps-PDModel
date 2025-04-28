@@ -1,7 +1,8 @@
 from src.mlops.abstractions import ModelABC
-from src.mlops.model.model_utils import mlflow_insample_metrics_log
+from src.mlops.model.model_utils import mlflow_insample_metrics_log, evaluate_params
 from src.mlops.configs import LGBMTrainingConfig as lgbm_cfg
 from itertools import product
+from tqdm import tqdm
 from joblib import Parallel, delayed
 import GPUtil
 import random
@@ -35,43 +36,7 @@ class LGBClassifier(ModelABC):
         self.param_grid = lgbm_cfg.LGBM_PARAMS_GRID
         self.additional_params = lgbm_cfg.LGBM_PARAMS
         # ==================== <END> Model configuration ====================
-    def evaluate_params(self,
-                        combo: Tuple,
-                        param_keys: List[str],
-                        train_val_splits: List[Dict[str, pd.DataFrame]],
-                        features: List[str]):
-        params = dict(zip(param_keys, combo))
-        params.update(self.additional_params)
 
-        loss_list = []
-
-        for split in train_val_splits:
-            train_df = split['train']
-            val_df = split['val']
-
-            X_train = train_df[features]
-            y_train = train_df['Y']
-            X_val = val_df[features]
-            y_val = val_df['Y']
-
-            classes = np.array([0, 1, 2])
-            class_weights = compute_class_weight(class_weight='balanced', classes=classes, y=y_train)
-            sample_weights = y_train.map(dict(zip(classes, class_weights)))
-            sample_weights = sample_weights.values
-            model = LGBMClassifier(**params)
-            model.fit(
-                X_train, y_train,
-                sample_weight=sample_weights,
-                eval_metric='multi_logloss',
-            )
-
-            preds_proba = model.predict_proba(X_val)
-            loss = log_loss(y_val, preds_proba)
-            print("round loss")
-            loss_list.append(loss)
-
-        avg_loss = np.mean(loss_list)
-        return avg_loss, params, model
 
     def hyperParamTuning_parallel(self,
                                   train_val_splits: List[Dict[str, pd.DataFrame]],
@@ -87,10 +52,16 @@ class LGBClassifier(ModelABC):
         if n_iter > 0:
             param_combinations = random.sample(param_combinations, max(2, n_iter))
 
-        results = Parallel(n_jobs=num_gpus)(
-            delayed(self.evaluate_params)(combo, param_keys, train_val_splits, features)
-            for i, combo in enumerate(param_combinations)
-        )
+        # results = Parallel(n_jobs=num_gpus)(
+        #     delayed(evaluate_params)(combo, param_keys, train_val_splits, features, self.additional_params)
+        #     for i, combo in enumerate(param_combinations)
+        # )
+        # print(results)
+        results = []
+        for i, combo in tqdm(enumerate(param_combinations), total=len(param_combinations), desc="Hyperparameter Tuning"):
+            result = evaluate_params(combo, param_keys, train_val_splits, features, self.additional_params)
+            results.append(result)
+
         print(results)
         # Find best
         best_result = min(results, key=lambda x: x[0])
@@ -108,11 +79,6 @@ class LGBClassifier(ModelABC):
         class_weights_dict = dict(zip(classes, class_weights))
         sample_weights = y_train.map(class_weights_dict)
         sample_weights = sample_weights.values
-        # ==================== <START> Enable autologging ====================
-        mlflow.lightgbm.autolog()
-        # ==================== <END> Enable autologging ====================
-
-
         # ==================== <START> Model configuration ====================
         # valid_data = lgb.Dataset(X_valid, label=y_valid, reference=train_data)
         # multiclass_roc_auc = functools.partial(roc_auc_score, multi_class='ovr')
@@ -128,14 +94,20 @@ class LGBClassifier(ModelABC):
 
         # cv = min(2, len(X_train))  # Ensure cv is not greater than the number of samples
 
+        # ==================== <START> HyperParamTuning ====================
+        best_results = self.hyperParamTuning_parallel(train_val_splits,
+                                                      self.x_cols_to_process_cn,
+                                                      n_iter=lgbm_cfg.N_ITERS)
+        best_params = best_results[1]
+        # ==================== <END> HyperParamTuning ====================
+
+        # ==================== <START> Enable autologging ====================
+        mlflow.lightgbm.autolog()
+        # ==================== <END> Enable autologging ====================
+
         # ===== Start MLflow Run & Train with GridSearchCV (No Validation Data Used Yet) =====
         with mlflow.start_run(run_name=f"{self.__class__.__name__}_Multiclass_{self.cali_group}", nested=True) as run:
             if self.start_cv:
-                best_results = self.hyperParamTuning_parallel(train_val_splits,
-                                                              self.x_cols_to_process_cn,
-                                                              n_iter=lgbm_cfg.N_ITERS)
-                best_params = best_results[1]
-
                 final_model = LGBMClassifier(**best_params,
                                              sample_weight=sample_weights,
                                              eval_metric='multi_logloss')
@@ -162,7 +134,7 @@ class LGBClassifier(ModelABC):
 
                 # ==================== <START> Prepare data for training without cross validation ====================
                 # Prepare the dataset for LightGBM
-                train_data = lgb.Dataset(X_train, label=y_train, weight=sample_weights)
+                # train_data = lgb.Dataset(X_train, label=y_train, weight=sample_weights)
                 # ==================== <END> Prepare data for training without cross validation ====================
 
                 # ==================== <START> Model configuration ====================
