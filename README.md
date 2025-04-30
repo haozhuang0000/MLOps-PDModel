@@ -152,7 +152,7 @@ zenml login --local --ip-address <YOUR_IP_ADDRESS>
 zenml integration install mlflow -y
 
 ## Registering experiment tracker
-zenml experiment-tracker register mlflow_tracker --flavor=mlflow
+zenml experiment-tracker register mlflow_tracker --flavor=mlflow --tracking_uri=http://<YOUR_IP_ADDRESS>:8885/ --tracking_username=MY_USERNAME --tracking_password=MY_PASSWORD
 
 ## Registering model deployer
 zenml model-deployer register mlflow --flavor=mlflow
