@@ -1,4 +1,5 @@
 # MLOps-PDModel
+This repository is a production-grade MLOps template that demonstrates how to train, track, deploy, and monitor a LightGBM predictive-default model end-to-end with ZenML, MLflow, Apache Airflow, MinIO, Docker, and Slack.
 
 ## Python Env
 
