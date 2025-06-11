@@ -1,4 +1,4 @@
-# MLOps-ForcastSys
+# MLOps-PDModel
 
 ## Python Env
 
@@ -37,14 +37,14 @@ MySQL_HOST=
 nano ~/.bashrc
 
 # << MINIO >>
-export MLFLOW_S3_ENDPOINT_URL=http://<YOUR_SERVER_ADDRESS>:<MINIO_PORT>
-export AWS_ACCESS_KEY_ID=<YOUR_MINIO_ROOT_USER>
-export AWS_SECRET_ACCESS_KEY=<YOUR_MINIO_ROOT_PASSWORD>
+export MLFLOW_S3_ENDPOINT_URL=http://<SERVER_ADDRESS>:<MINIO_PORT>
+export AWS_ACCESS_KEY_ID=<MINIO_ROOT_USER>
+export AWS_SECRET_ACCESS_KEY=<MINIO_ROOT_PASSWORD>
 
 # << Airflow >>
-export AIRFLOW_HOME=<YOUR_PATH_TO_AIRFLOW_HOME>
-export ZENML_LOCAL_STORES_PATH=<YOUR_PATH_TO_ZENML>
-export ZENML_CONFIG_PATH=<YOUR_PATH_TO_ZENML>
+export AIRFLOW_HOME=<PATH_TO_AIRFLOW_HOME>
+export ZENML_LOCAL_STORES_PATH=<PATH_TO_ZENML>
+export ZENML_CONFIG_PATH=<PATH_TO_ZENML>
 
 source ~/.bashrc
 ```
@@ -121,7 +121,7 @@ Example:
 default_timezone = Asia/Singapore
 ```
 ### 6. Slack setup steps - alerter
-1. Go to: https://slack.com/ and create <YOUR_WORKSPACE>
+1. Go to: https://slack.com/ and create <WORKSPACE>
 2. Go to: https://api.slack.com/apps
 2. Create New App -> From a manifest
 3. OAuth & Permissions -> Scopes -> Give permission for:
@@ -132,10 +132,10 @@ default_timezone = Asia/Singapore
    - im:read
    - mpim:read
    - calls:read
-4. OAuth & Permissions -> OAuth Tokens -> Install to <YOUR_WORKSPACE>
+4. OAuth & Permissions -> OAuth Tokens -> Install to <WORKSPACE>
 5. Back to your Slack channel 
    - Create a channel -> Edit setting -> Integrations -> Add apps
-6. <YOUR_SLACK_BOT_TOKEN> can be find here: OAuth & Permissions -> OAuth Tokens
+6. <SLACK_BOT_TOKEN> can be find here: OAuth & Permissions -> OAuth Tokens
 ## ZenML setup steps
 
 ```bash
@@ -152,7 +152,7 @@ zenml login --local
 zenml integration install mlflow -y
 
 ## Registering experiment tracker
-zenml experiment-tracker register mlflow_tracker --flavor=mlflow --tracking_uri=http://<YOUR_SERVER_ADDRESS>:8885/ --tracking_username=MY_USERNAME --tracking_password=MY_PASSWORD
+zenml experiment-tracker register mlflow_tracker --flavor=mlflow --tracking_uri=http://<SERVER_ADDRESS>:8885/ --tracking_username=MY_USERNAME --tracking_password=MY_PASSWORD
 
 ## Registering model deployer
 zenml model-deployer register mlflow --flavor=mlflow
@@ -176,7 +176,7 @@ zenml secret create slack_token --oauth_token=<SLACK_BOT_TOKEN>
 zenml alerter register slack_alerter \
     --flavor=slack \
     --slack_token={{slack_token.oauth_token}} \
-    --slack_channel_id=<YOUR_SLACK_CHANNEL_ID>
+    --slack_channel_id=<SLACK_CHANNEL_ID>
     
 zenml stack register mlflow_stack \
      -o mlops_airflow\
