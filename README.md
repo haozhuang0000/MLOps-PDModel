@@ -1,5 +1,4 @@
-# MLOps-PDModel
-This repository is a production-grade MLOps template that demonstrates how to train, track, deploy, and monitor a LightGBM predictive-default model end-to-end with ZenML, MLflow, Apache Airflow, MinIO, Docker, and Slack.
+# MLOps-ForcastSys
 
 ## Python Env
 
@@ -38,7 +37,7 @@ MySQL_HOST=
 nano ~/.bashrc
 
 # << MINIO >>
-export MLFLOW_S3_ENDPOINT_URL=http://<YOUR_SERVER_ADDRESS>:9000
+export MLFLOW_S3_ENDPOINT_URL=http://<YOUR_SERVER_ADDRESS>:<MINIO_PORT>
 export AWS_ACCESS_KEY_ID=<YOUR_MINIO_ROOT_USER>
 export AWS_SECRET_ACCESS_KEY=<YOUR_MINIO_ROOT_PASSWORD>
 
@@ -59,13 +58,13 @@ source ~/.bashrc
 - Under User variables or System variables, click New... to add the following:
 
 ```
-MLFLOW_S3_ENDPOINT_URL=http://<YOUR_SERVER_ADDRESS>:9000
-AWS_ACCESS_KEY_ID=<YOUR_MINIO_ROOT_USER>
-AWS_SECRET_ACCESS_KEY=<YOUR_MINIO_ROOT_PASSWORD>
+MLFLOW_S3_ENDPOINT_URL=http://<SERVER_ADDRESS>:<MINIO_PORT>
+AWS_ACCESS_KEY_ID=<MINIO_ROOT_USER>
+AWS_SECRET_ACCESS_KEY=<MINIO_ROOT_PASSWORD>
 
-AIRFLOW_HOME=<YOUR_PATH_TO_AIRFLOW_HOME>
-ZENML_LOCAL_STORES_PATH=<YOUR_PATH_TO_ZENML>
-ZENML_CONFIG_PATH=<YOUR_PATH_TO_ZENML>
+AIRFLOW_HOME=<PATH_TO_AIRFLOW_HOME>
+ZENML_LOCAL_STORES_PATH=<PATH_TO_ZENML>
+ZENML_CONFIG_PATH=<PATH_TO_ZENML>
 ```
 
 
@@ -84,10 +83,10 @@ Add the line to ~/.bashrc
 cd <PATH_TO_MINIO>
 wget https://dl.min.io/server/minio/release/linux-amd64/minio
 chmod +x <PATH_TO_MINIO>
-MINIO_ROOT_USER=<YOUR_MINIO_ROOT_USER> MINIO_ROOT_PASSWORD=<YOUR_MINIO_ROOT_PASSWORD> ./minio server /data/zhuanghao/mlops/minio_data --console-address "10.230.252.6:9001"
+MINIO_ROOT_USER=<MINIO_ROOT_USER> MINIO_ROOT_PASSWORD=<MINIO_ROOT_PASSWORD> ./minio server /Data_Path/minio_data --console-address "10.230.252.6:9001"
 ```
 
-1. Log into http://<YOUR_SERVER_ADDRESS>:9000
+1. Log into http://<SERVER_ADDRESS>:<MINIO_PORT>
 2. Create a bucket <BUCKET_NAME>
 
 ### 4. Mlflow setup steps - artifact tracker
@@ -148,19 +147,19 @@ airflow config get-value core DAGS_FOLDER ## Obtain <AIRFLOW_DAG_DIRECTORY>
 conda activate mlops
 
 zenml init
-zenml login --local --ip-address <YOUR_IP_ADDRESS>
+zenml login --local
 
 zenml integration install mlflow -y
 
 ## Registering experiment tracker
-zenml experiment-tracker register mlflow_tracker --flavor=mlflow --tracking_uri=http://<YOUR_IP_ADDRESS>:8885/ --tracking_username=MY_USERNAME --tracking_password=MY_PASSWORD
+zenml experiment-tracker register mlflow_tracker --flavor=mlflow --tracking_uri=http://<YOUR_SERVER_ADDRESS>:8885/ --tracking_username=MY_USERNAME --tracking_password=MY_PASSWORD
 
 ## Registering model deployer
 zenml model-deployer register mlflow --flavor=mlflow
 
 ## Registering s3 store
-zenml secret create s3_secret --aws_access_key_id=<YOUR_MINIO_ROOT_USER>   --aws_secret_access_key=<YOUR_MINIO_ROOT_PASSWORD>
-zenml artifact-store register minio_store -f s3 --path='s3://<BUCKET_NAME>' --authentication_secret=s3_secret --client_kwargs='{"endpoint_url": "http://<YOUR_IP_ADDRESS>:9000", "region_name": "us-east-1"}'
+zenml secret create s3_secret --aws_access_key_id=<MINIO_ROOT_USER>   --aws_secret_access_key=<MINIO_ROOT_PASSWORD>
+zenml artifact-store register minio_store -f s3 --path='s3://<BUCKET_NAME>' --authentication_secret=s3_secret --client_kwargs='{"endpoint_url": "http://<SERVER_ADDRESS>:<MINIO_PORT>", "region_name": "us-east-1"}'
 
 ## Registering airflow orchestrator
 zenml integration install airflow
@@ -173,7 +172,7 @@ zenml orchestrator register local_orchestrator --flavor=local
 
 ## Registering slack
 zenml integration install slack -y
-zenml secret create slack_token --oauth_token=<YOUR_SLACK_BOT_TOKEN>
+zenml secret create slack_token --oauth_token=<SLACK_BOT_TOKEN>
 zenml alerter register slack_alerter \
     --flavor=slack \
     --slack_token={{slack_token.oauth_token}} \
@@ -218,3 +217,4 @@ python src/mlops/airflow_inference.py
   - [Evidently AI](https://github.com/evidentlyai/evidently)
   - [MINIO](https://min.io/)
   - [Slack](https://slack.com/)
+
