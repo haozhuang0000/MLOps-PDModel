@@ -26,6 +26,9 @@ from mlflow.models import infer_signature
 
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = "1"
+
+from src.mlops.configs import MLflowConfig
+
 class LGBClassifier(ModelABC):
 
     def __init__(self, cali_group: str):
@@ -94,12 +97,23 @@ class LGBClassifier(ModelABC):
 
         # cv = min(2, len(X_train))  # Ensure cv is not greater than the number of samples
 
+        # ==================== <START> Mlflow setup ====================
+        MLflowConfig(experiment_name=f'pd_{self.cali_group}').setup_mlflow()
+        # ==================== <END> Mlflow setup ====================
+
         # ==================== <START> HyperParamTuning ====================
         best_results = self.hyperParamTuning_parallel(train_val_splits,
                                                       self.x_cols_to_process_cn,
                                                       n_iter=lgbm_cfg.N_ITERS)
         best_params = best_results[1]
         # ==================== <END> HyperParamTuning ====================
+
+        # ==================== <START> Check if there's an active run and end it ====================
+        active_run = mlflow.active_run()
+        if active_run:
+            self.logger.warning(f"Found active run {active_run.info.run_id}, ending it before starting new run")
+            mlflow.end_run()
+        # ==================== <END> Check if there's an active run and end it ====================
 
         # ==================== <START> Enable autologging ====================
         mlflow.lightgbm.autolog()

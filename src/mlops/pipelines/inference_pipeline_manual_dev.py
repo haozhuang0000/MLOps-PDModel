@@ -3,7 +3,8 @@ from src.mlops.steps_deployment import (
     load_data,
     predict,
     save_mysql,
-    post_statement
+    post_statement,
+    wait_for_files_dev
 )
 from datetime import datetime
 # from zenml.config import ResourceSettings
@@ -23,9 +24,9 @@ requirements_path = os.path.join(current_dir, "../../../requirements.txt")
 #     "resources": ResourceSettings(cpu_count=5, gpu_count=4, memory="24GB"),
 #     }
 # )
-def prediction_service(econ:int, model_name:str, task_date: str):
+def prediction_service(econ:int, model_name:str, task_date: str, datadate:str):
 
-    x_path, y_path, cripd_path, cripoe_path, alert_signal, datadate = wait_for_files(econ=econ)
+    x_path, y_path, cripd_path, cripoe_path, alert_signal, datadate = wait_for_files_dev(econ=econ, datadate=datadate)
     # post_statement(alert_signal, 'wait_for_files')
 
     X, y, cripred, alert_signal = load_data(x_path, y_path, cripd_path, cripoe_path)
@@ -39,4 +40,6 @@ def prediction_service(econ:int, model_name:str, task_date: str):
 
 if __name__ == "__main__":
     task_date = datetime.today().strftime('%Y%m%d')
-    prediction_service(2, 'LGBClassifier_Multiclass_CN', task_date)
+    task_date = '20250718'
+    datadate = '20250717'
+    prediction_service(2, 'LGBClassifier_Multiclass_CN', task_date, datadate)

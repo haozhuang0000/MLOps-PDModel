@@ -1,6 +1,6 @@
-from zenml.config import DockerSettings
-from zenml.integrations.constants import MLFLOW
-from zenml.pipelines import pipeline
+# from zenml.config import DockerSettings
+# from zenml.integrations.constants import MLFLOW
+# from zenml.pipelines import pipeline
 import pandas as pd
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = "1"
@@ -12,14 +12,12 @@ from src.mlops.steps import (
     evaluate_model,
     evidently_eval_report,
 )
-from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
+# from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
 
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../data/input'))
 
-docker_settings = DockerSettings(required_integrations=[MLFLOW])
-
-
-@pipeline(enable_cache=False, settings={"docker": docker_settings})
+# docker_settings = DockerSettings(required_integrations=[MLFLOW])
+# @pipeline(enable_cache=False, settings={"docker": docker_settings})
 def train_pipeline():
     # ### --------------------------- Data Preprocessing ------------------------ ###
     # df_annual_sorted_after_2000, industry_mappings, df_company_info = load_data(
@@ -53,13 +51,13 @@ def train_pipeline():
     ml_result = evaluate_model(final_test, trained_results)
     evidently_eval_report(ml_result, train_df, final_test)
 
-    print(
-        "Now run \n "
-        f"    mlflow ui --backend-store-uri '{get_tracking_uri()}' --host 0.0.0.0\n"
-        "To inspect your experiment runs within the mlflow UI.\n"
-        "You can find your runs tracked within the `mlflow_example_pipeline`"
-        "experiment. Here you'll also be able to compare the two runs.)"
-    )
+    # print(
+    #     "Now run \n "
+    #     f"    mlflow ui --backend-store-uri '{get_tracking_uri()}' --host 0.0.0.0\n"
+    #     "To inspect your experiment runs within the mlflow UI.\n"
+    #     "You can find your runs tracked within the `mlflow_example_pipeline`"
+    #     "experiment. Here you'll also be able to compare the two runs.)"
+    # )
 
 
 if __name__ == "__main__":
