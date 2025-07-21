@@ -10,9 +10,9 @@ from tqdm import tqdm
 import os
 import pandas as pd
 import pickle
-from zenml.config import ResourceSettings
-from zenml import step
-from zenml.client import Client
+# from zenml.config import ResourceSettings
+# from zenml import step
+# from zenml.client import Client
 # experiment_tracker = Client().active_stack.experiment_tracker
 
 # @step(experiment_tracker=experiment_tracker.name)
@@ -43,7 +43,7 @@ from zenml.client import Client
 #         results[id_bb_unique] = company_results
 #     return results
 
-@step(experiment_tracker=Client().active_stack.experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
+# @step(experiment_tracker=Client().active_stack.experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
 def train_model(train_val_splits: List[Dict[str, pd.DataFrame]], train_df: pd.DataFrame):
 
     logger = Log(f"{os.path.basename(__file__)}").getlog()

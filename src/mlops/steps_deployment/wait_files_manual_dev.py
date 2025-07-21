@@ -16,15 +16,17 @@ load_dotenv()
 # experiment_tracker = Client().active_stack.experiment_tracker
 
 # @step(enable_cache=False, experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=5, gpu_count=4, memory="24GB")})
-def wait_for_files(econ: int,
+def wait_for_files_dev(econ: int,
                    timeout_sec: int = 21600,
-                   poll_interval_sec: int = 600) -> Tuple[str, str, str]:
+                   poll_interval_sec: int = 600,
+                       datadate: str='19900101') -> Tuple[str, str, str]:
     """
     Waits for both data (.mat) files to be available via SMB. Returns file paths.
     """
     logger = Log(f"{os.path.basename(__file__)}").getlog()
-    dt = datetime.today()
-    date = int(str(dt.date()).replace('-', '')) - 1
+    # dt = datetime.today()
+    # date = int(str(dt.date()).replace('-', '')) - 1
+    date = datadate
     print(date)
     # date = 20250711
 

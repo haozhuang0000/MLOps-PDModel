@@ -63,3 +63,22 @@ def get_XY(x_path: str, y_path: str):
     y['Event_Type'] = y['Event_Type'].fillna(0)
 
     return X, y
+
+def get_cripred(cripd_path: str, cripoe_path: str):
+    smbclient.register_session(
+        os.getenv("FILEIP"),
+        username=os.getenv("FILEIP_USERNAME"),
+        password=os.getenv("FILEIP_PASSWORD")
+    )
+    with smbclient.open_file(cripd_path, mode='rb') as f:
+        x_bytes = f.read()
+        cripd = pd.DataFrame(scipy.io.loadmat(io.BytesIO(x_bytes))['pd'])
+    cripd.columns = ['Comp_No', 'YY', 'MM', 'DD', 'pd_1', 'pd_2', 'pd_3', 'pd_6', 'pd_12', 'pd_24', 'pd_36', 'pd_60']
+
+    with smbclient.open_file(cripoe_path, mode='rb') as f:
+        x_bytes = f.read()
+        cripoe = pd.DataFrame(scipy.io.loadmat(io.BytesIO(x_bytes))['poe'])
+    cripoe.columns = ['Comp_No', 'YY', 'MM', 'DD', 'poe_1', 'poe_2', 'poe_3', 'poe_6', 'poe_12', 'poe_24', 'poe_36', 'poe_60']
+
+    cripred = cripd.merge(cripoe, on=['Comp_No', 'YY', 'MM', 'DD'], how='inner')
+    return cripred

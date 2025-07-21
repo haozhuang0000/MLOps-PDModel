@@ -20,9 +20,10 @@ class LGBMTrainingConfig:
         'objective': 'multiclass',
         'num_class': 3,
         'random_state': 42,
-        'device': 'gpu',
-        'gpu_platform_id': 0,
-        'gpu_device_id': gpu_id,
+        # 'device': 'gpu',
+        # 'gpu_platform_id': 0,
+        # 'gpu_device_id': gpu_id,
         'boosting_type': 'gbdt',
         'verbosity': -1,
+        'num_threads': 4
     }

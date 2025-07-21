@@ -3,11 +3,13 @@ from .db_config import *
 from .variables import *
 from .training_config import *
 from .training_variables import *
+from .mlflow_configs import *
 __all__ = [
     "BBGFields",
     "XYVariables",
     "MysqlConfig",
     "Variables",
     "LGBMTrainingConfig",
-    "TrainingVariables"
+    "TrainingVariables",
+    "MLflowConfig"
 ]

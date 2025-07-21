@@ -5,10 +5,10 @@ from typing import Tuple, Dict
 import os
 import pickle
 import pandas as pd
-from zenml.config import ResourceSettings
-from zenml import step
-from zenml.client import Client
-experiment_tracker = Client().active_stack.experiment_tracker
+# from zenml.config import ResourceSettings
+# from zenml import step
+# from zenml.client import Client
+# experiment_tracker = Client().active_stack.experiment_tracker
 
 # @step(experiment_tracker=experiment_tracker.name)
 # def load_data(data_path, comp_path) -> Tuple[pd.DataFrame, list, pd.DataFrame]:
@@ -38,7 +38,7 @@ experiment_tracker = Client().active_stack.experiment_tracker
 #         print(f"File '{file_path}' loaded.")
 #     return training_results
 
-@step(enable_cache=False, experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
+# @step(enable_cache=False, experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
 def load_data(data_path) -> pd.DataFrame:
     print('loading data')
     df = DataLoader.load_data(

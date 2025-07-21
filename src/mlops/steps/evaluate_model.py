@@ -12,10 +12,10 @@ import numpy as np
 import pandas as pd
 import mlflow
 from mlflow import register_model
-from zenml.config import ResourceSettings
-from zenml import step
-from zenml.client import Client
-experiment_tracker = Client().active_stack.experiment_tracker
+# from zenml.config import ResourceSettings
+# from zenml import step
+# from zenml.client import Client
+# experiment_tracker = Client().active_stack.experiment_tracker
 
 # def evaluate_for_y(df_X_test: pd.DataFrame,
 #                    df_y_true: pd.Series,
@@ -51,7 +51,7 @@ experiment_tracker = Client().active_stack.experiment_tracker
 #         # for y, mlflow_info in model_info.items():
 #         evaluate_for_model(df_test, df_y_true, y_and_model_info, id_bb_unique)
 
-@step(experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
+# @step(experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
 def evaluate_model(final_test:pd.DataFrame,
                    training_results: Dict[str, Any],
                    average = 'macro',

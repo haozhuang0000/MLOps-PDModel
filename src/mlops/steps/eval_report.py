@@ -15,12 +15,12 @@ import os
 import numpy as np
 import pandas as pd
 import mlflow
-from zenml.config import ResourceSettings
-from zenml import step
-from zenml.client import Client
-experiment_tracker = Client().active_stack.experiment_tracker
+# from zenml.config import ResourceSettings
+# from zenml import step
+# from zenml.client import Client
+# experiment_tracker = Client().active_stack.experiment_tracker
 
-@step(experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
+# @step(experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
 def evidently_eval_report(ml_results: Dict[str, Any], train_df: pd.DataFrame, test_df: pd.DataFrame):
     ## Set output dir for evidently report
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../data/output/evidently_ai'))

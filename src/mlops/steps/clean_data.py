@@ -3,12 +3,12 @@ from src.mlops.data_cleaning import PDDataCleaning, DataCleaner
 from typing import Tuple
 from typing_extensions import Annotated
 import pandas as pd
-from zenml.config import ResourceSettings
-from zenml import step
-from zenml.client import Client
-experiment_tracker = Client().active_stack.experiment_tracker
+# from zenml.config import ResourceSettings
+# from zenml import step
+# from zenml.client import Client
+# experiment_tracker = Client().active_stack.experiment_tracker
 
-@step(experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
+# @step(experiment_tracker=experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     #
     ## ----------------------------- merge fs data with company info ----------------------------- ##
