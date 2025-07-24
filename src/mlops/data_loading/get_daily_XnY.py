@@ -58,9 +58,9 @@ def get_XY(x_path: str, y_path: str):
         y = pd.DataFrame(scipy.io.loadmat(io.BytesIO(y_bytes))['firmHistory'])
 
     y = y.iloc[:, [0, 2, 4]]
-    y.columns = ['Comp_No', 'YYYYMMDD', 'Event_Type']
-    y['Comp_No'] = y['Comp_No'].apply(lambda X: math.floor(X / 1000))
-    y['Event_Type'] = y['Event_Type'].fillna(0)
+    y.columns = ['comp_id', 'yyyymmdd', 'event_type']
+    y['comp_id'] = y['comp_id'].apply(lambda X: math.floor(X / 1000))
+    y['event_type'] = y['event_type'].fillna(0)
 
     return X, y
 
@@ -73,12 +73,12 @@ def get_cripred(cripd_path: str, cripoe_path: str):
     with smbclient.open_file(cripd_path, mode='rb') as f:
         x_bytes = f.read()
         cripd = pd.DataFrame(scipy.io.loadmat(io.BytesIO(x_bytes))['pd'])
-    cripd.columns = ['Comp_No', 'YY', 'MM', 'DD', 'pd_1', 'pd_2', 'pd_3', 'pd_6', 'pd_12', 'pd_24', 'pd_36', 'pd_60']
+    cripd.columns = ['comp_id', 'yy', 'mm', 'dd', 'pd_1', 'pd_2', 'pd_3', 'pd_6', 'pd_12', 'pd_24', 'pd_36', 'pd_60']
 
     with smbclient.open_file(cripoe_path, mode='rb') as f:
         x_bytes = f.read()
         cripoe = pd.DataFrame(scipy.io.loadmat(io.BytesIO(x_bytes))['poe'])
-    cripoe.columns = ['Comp_No', 'YY', 'MM', 'DD', 'poe_1', 'poe_2', 'poe_3', 'poe_6', 'poe_12', 'poe_24', 'poe_36', 'poe_60']
+    cripoe.columns = ['comp_id', 'yy', 'mm', 'dd', 'poe_1', 'poe_2', 'poe_3', 'poe_6', 'poe_12', 'poe_24', 'poe_36', 'poe_60']
 
-    cripred = cripd.merge(cripoe, on=['Comp_No', 'YY', 'MM', 'DD'], how='inner')
+    cripred = cripd.merge(cripoe, on=['comp_id', 'yy', 'mm', 'dd'], how='inner')
     return cripred

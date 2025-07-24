@@ -40,6 +40,6 @@ def prediction_service(econ:int, model_name:str, task_date: str, datadate:str):
 
 if __name__ == "__main__":
     task_date = datetime.today().strftime('%Y%m%d')
-    task_date = '20250718'
-    datadate = '20250717'
+    task_date = '20250719'
+    datadate = '20250718'
     prediction_service(2, 'LGBClassifier_Multiclass_CN', task_date, datadate)

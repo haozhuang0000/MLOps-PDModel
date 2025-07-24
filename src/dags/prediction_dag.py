@@ -25,7 +25,7 @@ with DAG(
 
     def run_prediction():
         from datetime import datetime
-        task_date = datetime.today().strftime('%Y-%m-%d')
+        task_date = datetime.today().strftime('%Y%m%d')
         prediction_service(2, 'LGBClassifier_Multiclass_CN', task_date)
 
     run_task = PythonOperator(
