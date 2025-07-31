@@ -40,9 +40,9 @@ def save_mysql(df: pd.DataFrame,
         try:
             with engine.connect() as conn:
                 result = conn.execute(
-                    text(f"SELECT MAX(version) FROM {table_name} WHERE task_date = :task_date"),
+                    text(f"SELECT * FROM {table_name} WHERE task_date = :task_date"),
                     {"task_date": task_date}
-                ).scalar()
+                )
                 existing_row = result.fetchone()
                 if existing_row:
                     logger.info(f"Data for task_date `{task_date}` already exists in `{table_name}`. Skipping insert.")

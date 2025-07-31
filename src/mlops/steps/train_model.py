@@ -44,14 +44,15 @@ import pickle
 #     return results
 
 # @step(experiment_tracker=Client().active_stack.experiment_tracker.name, settings={"resources": ResourceSettings(cpu_count=20, gpu_count=4, memory="128GB")})
-def train_model(train_val_splits: List[Dict[str, pd.DataFrame]], train_df: pd.DataFrame):
+def train_model(train_val_splits: List[Dict[str, pd.DataFrame]],
+                train_df: pd.DataFrame,
+                cali_group: str):
 
     logger = Log(f"{os.path.basename(__file__)}").getlog()
     # base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../data/output'))
     # file_path = os.path.join(base_dir, "training_results_auto_test_no_required.pkl")
     # if not os.path.exists(file_path):
     # models = [H2OAuto(), LGBRegression(), RFRegression()]
-    cali_group = "CN"
     models = [LGBClassifier(cali_group=cali_group)]
     company_results = {}
     for model in models:
