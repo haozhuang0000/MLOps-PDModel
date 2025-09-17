@@ -33,4 +33,5 @@ def predict(model_name: str, X: pd.DataFrame, datadate: str) -> Tuple[pd.DataFra
         logger.error(f"[predict] Failed to load model: {model_name}")
         return pd.DataFrame(), alert_signal
     X = X[['Comp_No', 'YYYY', 'MM', 'YYYYMMDD', 'pd_1', 'poe_1']]
+    X = X.rename(columns={'Comp_No': 'comp_id', 'YYYY': 'yyyy', 'MM': 'mm', 'YYYYMMDD': 'yyyymmdd'})
     return X, alert_signal

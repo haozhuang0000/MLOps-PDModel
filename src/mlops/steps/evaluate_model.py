@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import mlflow
 from mlflow import register_model
+from datetime import datetime
 # from zenml.config import ResourceSettings
 # from zenml import step
 # from zenml.client import Client
@@ -59,6 +60,7 @@ def evaluate_model(final_test:pd.DataFrame,
     X_test = final_test[Variables.x_cols_to_process_cn]
     y_test = final_test['Y']
     output_dict = {}
+    model_info_dict = {}
     for model, model_results in training_results.items():
         mlflow_model_name = model_results["mlflow_model_name"]
         mlflow_model_run_id = model_results["mlflow_model_run_id"]
@@ -83,7 +85,8 @@ def evaluate_model(final_test:pd.DataFrame,
         Evaluator(strategy=Recall()).evaluate(y_pred, y_proba, y_test, mlflow_model_name, mlflow_model_run_id, average=average)
         Evaluator(strategy=F1Score()).evaluate(y_pred, y_proba, y_test, mlflow_model_name, mlflow_model_run_id, average=average)
         Evaluator(strategy=ArCredit()).evaluate(y_pred, y_proba, y_test, mlflow_model_name, mlflow_model_run_id, average=average)
-        Evaluator(strategy=AucRoc()).evaluate(y_pred, y_proba, y_test, mlflow_model_name, mlflow_model_run_id, average=average)
+        auc = Evaluator(strategy=AucRoc()).evaluate(y_pred, y_proba, y_test, mlflow_model_name, mlflow_model_run_id, average=average)
+        metrics_type_name = AucRoc().__class__.__name__
 
         output_dict[mlflow_model_name] = {
             'mlflow_model_run_id': mlflow_model_run_id,
@@ -91,11 +94,26 @@ def evaluate_model(final_test:pd.DataFrame,
             'y_pred_label': y_pred,
             'y_pred_proba': y_proba,
         }
+
         try:
             register_model_name = mlflow_model_name + f"_Multiclass_{training_results['cali_group']}"
         except:
             ## Todo：remove testing
             register_model_name = mlflow_model_name + f"_Multiclass_CN"
-        mlflow.register_model(model_uri=model_uri, name=register_model_name)
+        result = mlflow.register_model(model_uri=model_uri, name=register_model_name)
 
-    return output_dict
+        # metrics_dict = {
+        #     'metrics_type_name': auc
+        # }
+        #
+        # model_dict = {
+        #     'model_type_name': mlflow_model_name,
+        #     'version': register_model_name.version
+        # }
+        model_info_dict[mlflow_model_name] = {
+            'metrics': {f'{metrics_type_name}': auc},
+            'version': result.version,
+            'train_date': datetime.today().date()
+        }
+
+    return output_dict, model_info_dict

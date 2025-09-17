@@ -52,7 +52,8 @@ def load_data(x_path: str,
     # Filter the DataFrame to only those rows
     output_X = X.loc[latest_idx].reset_index(drop=True).drop(columns=['year_month'])
     cripred = get_cripred(cripd_path, cripoe_path)
-    y.YYYYMMDD = y.YYYYMMDD.astype(int)
+    y.yyyymmdd = y.yyyymmdd.astype(int)
+
     return output_X, y, cripred, alert_signal
 
 if __name__ == "__main__":
