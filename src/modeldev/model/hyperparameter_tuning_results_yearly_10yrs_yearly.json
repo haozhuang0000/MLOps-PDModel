@@ -1,0 +1,21 @@
+{
+    "best_params": {
+        "learning_rate": 0.0397754980328416,
+        "num_leaves": 69,
+        "max_depth": 4,
+        "min_child_samples": 77,
+        "feature_fraction": 0.8172209446601095,
+        "bagging_fraction": 0.740000987407495,
+        "bagging_freq": 1,
+        "lambda_l1": 0.0007738737577506243,
+        "lambda_l2": 4.913011779159684,
+        "objective": "multiclass",
+        "metric": "multi_logloss",
+        "num_class": 3,
+        "boosting_type": "gbdt",
+        "random_state": 42,
+        "verbose": -1
+    },
+    "best_auc": 0.9163249085995867,
+    "best_pr_auc": 0.4275126530802163
+}

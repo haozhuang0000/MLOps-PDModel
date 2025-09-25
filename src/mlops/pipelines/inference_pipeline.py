@@ -6,23 +6,12 @@ from src.mlops.steps_deployment import (
     post_statement
 )
 from datetime import datetime
-# from zenml.config import ResourceSettings
-# from zenml import pipeline, step
-# from zenml.config import DockerSettings
-# from zenml.integrations.constants import MLFLOW
 from dotenv import dotenv_values
 env_vars = dotenv_values(".env")
 import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
 requirements_path = os.path.join(current_dir, "../../../requirements.txt")
-# docker_settings = DockerSettings(requirements=requirements_path, apt_packages=["git", "libgomp1"], environment=env_vars)
-# @pipeline(
-#     enable_cache=False,
-#     settings={
-#     "docker": docker_settings,
-#     "resources": ResourceSettings(cpu_count=5, gpu_count=4, memory="24GB"),
-#     }
-# )
+
 def prediction_service(econ:int, model_name:str, task_date: str):
 
     x_path, y_path, cripd_path, cripoe_path, alert_signal, datadate = wait_for_files(econ=econ)
