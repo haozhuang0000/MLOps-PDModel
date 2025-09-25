@@ -21,8 +21,9 @@ class DataPreprocessor:
     def preprocess_data(self):
 
         df = self.load_data()
+        df['Y'] = df.groupby('U3_company_number')['Y'].shift(-12)
         df = self.filling_data(df)
-        df = df.dropna()
+        #df = df.dropna()
         df = df[df.Y!=100]
         return df
 

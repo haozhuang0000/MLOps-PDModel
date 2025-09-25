@@ -13,6 +13,7 @@ from sklearn.metrics import roc_auc_score
 import json
 from src.modeldev.data_preprocessing.data_preprocessor import DataPreprocessor
 import matplotlib.pyplot as plt
+import os
 
 def get_data(path):
     """
@@ -21,7 +22,8 @@ def get_data(path):
     try:
         data_preprocessor = DataPreprocessor(path=path)
         df = data_preprocessor.preprocess_data()
-        df['Y'] = df.groupby('U3_company_number')['Y'].shift(-12)
+        # Drop NaNs caused by shifting
+        df = df.dropna(subset=['Y'])
         return df
     except Exception as e:
         print(f"Error fetching data: {e}")
@@ -140,6 +142,12 @@ def tune_hyperparameters(X_train_full, y_train_full, expanding_time):
             X_train, X_val = X_train_full.iloc[train_index], X_train_full.iloc[val_index]
             y_train, y_val = y_train_full.iloc[train_index], y_train_full.iloc[val_index]
 
+            
+            # Skip training if only one class in training set
+            if len(np.unique(y_train)) < 3:
+                print(f"Skipping fold {fold + 1}: Only one class in training set: {np.unique(y_train)}")
+                continue
+                    
             # Check if we have samples after filtering out class 2
             mask = y_val != 2
             if not mask.any():
@@ -218,8 +226,8 @@ def tune_hyperparameters(X_train_full, y_train_full, expanding_time):
     }
 
     # Save to JSON file
-    with open(f'hyperparameter_tuning_results_{expanding_time}_yearly.json', 'w') as f:
-        json.dump(results_dict, f, indent=4)
+    #with open(f'hyperparameter_tuning_results_{expanding_time}_yearly.json', 'w') as f:
+    #    json.dump(results_dict, f, indent=4)
 
     return best_params
 
@@ -392,7 +400,7 @@ def plot_backtest_results(results_df, save_path=None):
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Plot saved to {save_path}")
 
-    plt.show()
+    #plt.show()
 
 
 import shap
@@ -400,7 +408,8 @@ import shap
 
 def run_expanding_backtest_with_shap(df, features, target_column, best_params,
                                      start_year=2023, start_month=1, end_year=2025, end_month=6,
-                                     shap_summary_path=None):
+                                     shap_summary_path=None,
+                                     plots_path=None):
     """
     Performs expanding window backtesting and computes SHAP feature importances.
 
@@ -432,11 +441,30 @@ def run_expanding_backtest_with_shap(df, features, target_column, best_params,
             X_train, y_train = train_data[features], train_data[target_column]
             X_test, y_test = test_data[features], test_data[target_column]
 
-            # Train model
-            lgb_model = lgb.LGBMClassifier(**best_params)
+            unique_classes = np.unique(y_train)
+            if len(unique_classes) < 2:
+                print(f"Skipping test date {test_date}: only one class in training data")
+                results.append({
+                    # 'date': test_date.date,
+                    'year': test_date.strftime('%Y-%m-%d'),
+                    'auc_score': np.nan,
+                    'pr_auc': 0.5,
+                    'train_size': len(train_data),
+                    'test_size': len(test_data),
+                    'test_positives': 0,
+                })
+                continue
+
+            params_fold = best_params.copy()
+            params_fold['objective'] = 'multiclass'
+            params_fold['metric'] = 'multi_logloss'
+            params_fold['num_class'] = len(unique_classes)
+            
+            # ===== Model training =====
+            lgb_model = lgb.LGBMClassifier(**params_fold)
             lgb_model.fit(X_train, y_train)
 
-            # Predict probabilities
+            # ===== Prediction & evaluation =====
             y_pred_proba = lgb_model.predict_proba(X_test)
 
             # AUC / PR-AUC (excluding class 2)
@@ -473,7 +501,7 @@ def run_expanding_backtest_with_shap(df, features, target_column, best_params,
                     mean_abs_shap = np.abs(shap_vals).mean(axis=0)
                     shap_importances.append(pd.DataFrame({
                         "feature": features,
-                        "mean_abs_shap": mean_abs_shap[:, 1],
+                        "mean_abs_shap": mean_abs_shap[:, 1], 
                         "year": test_date
                     }))
 
@@ -493,13 +521,32 @@ def run_expanding_backtest_with_shap(df, features, target_column, best_params,
         else:
             print(f"Skipping {test_date}: No train/test data.")
 
-    # Final aggregation
     results_df = pd.DataFrame(results)
     shap_importance_df = pd.concat(shap_importances) if shap_importances else pd.DataFrame()
 
-    mean_shap = shap_importance_df.groupby("feature")["mean_abs_shap"].mean().sort_values(ascending=True)
+    if results_df.empty:
+        print("\nNo backtest results were calculated.")
+        return np.nan, np.nan, results_df, shap_importance_df
 
-    # Plot top 10
+    results_df['year'] = pd.to_datetime(results_df['year'], errors='coerce')
+
+    if shap_importance_df.empty:
+        print("No SHAP values were computed. Skipping SHAP feature importance plot.")
+        return np.mean(auc_results), np.mean(prauc_results), results_df, shap_importance_df
+
+    # Plot SHAP summary
+    mean_shap = shap_importance_df.groupby("feature")["mean_abs_shap"].mean().sort_values(ascending=True)
+    save_shap_plot(mean_shap, plots_path)
+
+    # Final Metrics
+    filtered_auc = [auc for auc in auc_results if not pd.isna(auc)]
+    mean_auc = np.mean(filtered_auc)
+    mean_prauc = np.mean(prauc_results)
+
+    print(f"\nExpanding Window Mean AUC={mean_auc:.4f}, Mean PR-AUC={mean_prauc:.4f}")
+    return mean_auc, mean_prauc, results_df, shap_importance_df
+
+    '''# Plot top 10
     top_n = 15
     plt.figure(figsize=(8, 6))
     mean_shap.tail(top_n).plot(kind="barh", color="skyblue")
@@ -519,7 +566,32 @@ def run_expanding_backtest_with_shap(df, features, target_column, best_params,
     mean_prauc = np.mean(prauc_results)
     print(f"\nExpanding Window Mean AUC={mean_auc:.4f}, Mean PR-AUC={mean_prauc:.4f}")
 
-    return mean_auc, mean_prauc, results_df, shap_importance_df
+    return mean_auc, mean_prauc, results_df, shap_importance_df'''
+
+
+def save_shap_plot(mean_shap, path, top_n=15):
+    """
+    Saves a horizontal bar plot of the top SHAP feature importances.
+
+    Args:
+        mean_shap (pd.Series): Series with feature names as index and mean SHAP values.
+        path (str): Full filepath (including filename) to save the plot.
+        top_n (int): Number of top features to plot (default 15).
+    """
+    folder = os.path.dirname(path)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    plt.figure(figsize=(8, 6))
+    mean_shap.tail(top_n).plot(kind="barh", color="skyblue")
+    plt.title(f"Top {top_n} SHAP Feature Importances (Average over years)")
+    plt.xlabel("Mean |SHAP Value|")
+    plt.ylabel("Feature")
+    plt.tight_layout()
+
+    plt.savefig(path, dpi=300)
+    plt.close()
+    print(f"SHAP feature importance plot saved to {path}")
 
 
 def main():

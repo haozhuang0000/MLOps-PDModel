@@ -157,6 +157,10 @@ class DatabaseManager:
         """
         df = self.execute_query(query)
         return df
+    
+    def get_econ_list(self):
+        df = self.execute_query("SELECT econ_id, econ_name FROM mlops_pd.econ;")
+        return df
 
     def close_connection(self):
         """Close database connection"""
@@ -269,7 +273,7 @@ class DataProcessor:
 def load_company_info():
     """Load company mapping data"""
     try:
-        company_mapping_path = Path("/data/zhuanghao/MyGithub/MLOps-PDModel/src/company_info.csv")
+        company_mapping_path = Path("./src/company_info.csv")
         if company_mapping_path.exists():
             return pd.read_csv(company_mapping_path)
         else:
@@ -598,6 +602,196 @@ class DashboardUI:
         else:
             st.warning(f"No data found for {selected_country} and {selected_metric}.")
 
+    '''def display_model_performance(self):
+        """Display Model Performance Monitoring section with country + 1M / 12M horizons."""
+        st.title("📊 Model Performance Monitoring")
+
+        # Country selector
+        econ_df = self.db_manager.execute_query("SELECT econ_id, econ_name FROM mlops_pd.econ;")
+        # assume execute_query returns a DataFrame with econ_id,econ_name
+        econ_options = econ_df['econ_name'].tolist()
+        econ_map = dict(zip(econ_df['econ_name'], econ_df['econ_id']))
+        selected_country_name = st.selectbox("Select Country", options=econ_options)
+        selected_econ_id = econ_map[selected_country_name]
+
+        st.markdown(f"Showing results for **{selected_country_name}**")
+
+        # Tab horizons: 1M (horizon=1) vs 12M (horizon=12)
+        tab1, tab2 = st.tabs(["📅 1M Horizon", "📅 12M Horizon"])
+
+        with tab1:
+            self.render_model_comparison_horizon(
+                horizon = 1,
+                selected_econ = selected_econ_id
+            )
+
+        with tab2:
+            self.render_model_comparison_horizon(
+                horizon = 12,
+                selected_econ = selected_econ_id
+            )
+'''
+    
+    def display_model_performance(self):
+        st.title("📊 Model Performance Monitoring")
+
+        # === Step 1: Get all countries from database ===
+        econ_df = self.db_manager.execute_query("SELECT econ_id, econ_name FROM mlops_pd.econ;")
+        econ_map = dict(zip(econ_df['econ_id'], econ_df['econ_name']))
+        reverse_econ_map = {v: k for k, v in econ_map.items()}
+
+        # === Step 2: Get econ_ids from LightGBM results ===
+        query = """
+            SELECT DISTINCT econ FROM mlops_pd.mlpd_backtesting_results
+            WHERE horizon IN (1, 12)
+            AND (auc_score IS NOT NULL OR pr_auc IS NOT NULL)
+        """
+        ml_econ_df = self.db_manager.execute_query(query)
+        ml_econ_ids = set(ml_econ_df['econ'].dropna().astype(int).tolist())
+
+        # === Step 3: Check for existing CSVs for stats model ===
+        csv_dir = "data/cripd_metrics"
+        csv_econ_ids = set()
+        for econ_id in econ_df['econ_id']:
+            path_1m = os.path.join(csv_dir, f"cripd_mly_1M_{econ_id}.csv")
+            path_12m = os.path.join(csv_dir, f"cripd_yearly_12M_{econ_id}.csv")
+            if os.path.exists(path_1m) or os.path.exists(path_12m):
+                csv_econ_ids.add(econ_id)
+
+        # === Step 4: Union of valid econ_ids ===
+        valid_econ_ids = ml_econ_ids.union(csv_econ_ids)
+
+        # === Step 5: Filter econ_df to only valid econ_ids ===
+        econ_df_filtered = econ_df[econ_df['econ_id'].isin(valid_econ_ids)]
+        econ_options = econ_df_filtered['econ_name'].tolist()
+        econ_map_filtered = dict(zip(econ_df_filtered['econ_name'], econ_df_filtered['econ_id']))
+
+        if not econ_options:
+            st.warning("No countries with available data (ML or Stats).")
+            return
+
+        # === Step 6: Dropdown ===
+        selected_country_name = st.selectbox("🌍 Select Country", options=econ_options)
+        selected_econ_id = econ_map_filtered[selected_country_name]
+
+        # === Proceed to tabs with selected country ===
+        tab1, tab2 = st.tabs(["📅 1M Horizon", "📅 12M Horizon"])
+        with tab1:
+            self.render_model_comparison_horizon(horizon=1, selected_econ=selected_econ_id)
+
+        with tab2:
+            self.render_model_comparison_horizon(horizon=12, selected_econ=selected_econ_id)
+    
+    
+    def render_model_comparison_horizon(self, horizon:int, selected_econ:int):
+        """
+        For a given horizon (1 or 12) and econ_id, load CRIPD stats from CSV and ML from DB,
+        then plot comparison.
+        """
+
+        # --- Load statistical (CRIPD) data from CSV --- #
+        # Construct filename depending on econ & horizon
+        if horizon == 1:
+            # CSV for 1M
+            csv_stats_path = f"cripd_metrics/cripd_mly_1M_{selected_econ}.csv"         #set path as required
+        elif horizon == 12:
+            csv_stats_path = f"cripd_metrics/cripd_yearly_12M_{selected_econ}.csv"
+        else:
+            st.error(f"Horizon {horizon} not supported")
+            return
+
+        try:
+            df_stats = pd.read_csv(csv_stats_path)
+        except FileNotFoundError:
+            st.error(f"Stats CSV not found: {csv_stats_path}")
+            return
+
+        # Ensure date parsing
+        df_stats['date'] = pd.to_datetime(df_stats['date'])
+
+        # --- Load ML (LightGBM) data from MySQL --- #
+        # Query ML table
+        query_ml = f"""
+            SELECT date, auc_score as auc_score_ml, pr_auc as pr_auc_ml, test_positives
+            FROM mlops_pd.mlpd_backtesting_results
+            WHERE econ = {selected_econ}
+              AND horizon = {horizon}
+              AND (auc_score IS NOT NULL OR pr_auc IS NOT NULL)
+            ORDER BY date asc
+        """
+        df_ml = self.db_manager.execute_query(query_ml)
+        if df_ml.empty:
+            st.warning("No ML data for this country / horizon.")
+            return
+        # parse date
+        df_ml['date'] = pd.to_datetime(df_ml['date'])
+
+        # --- Merge the two DataFrames on date --- #
+        df = pd.merge(df_stats, df_ml, on='date', how='inner')
+
+        if df.empty:
+            st.warning("No overlapping dates between stats and ML data.")
+            return
+
+        # Rename stats columns to match suffix style or explicitly
+        # Suppose df_stats has columns: date, auc_score, pr_auc
+        df = df.rename(columns={
+            'auc_score': 'auc_score_cripd',
+            'pr_auc': 'pr_auc_cripd'
+        })
+
+        # Drop rows where both AUC values are NaN
+        df_auc_cripd = df.dropna(subset=['auc_score_cripd'], how='all')
+        df_auc_ml = df.dropna(subset=['auc_score_ml'], how='all')
+
+        # --- Plotting --- #
+        st.markdown("### 📈 AUC Score Comparison")
+        fig_auc = go.Figure()
+        fig_auc.add_trace(go.Scatter(
+            x=df_auc_cripd['date'], y=df_auc_cripd['auc_score_cripd'],
+            mode='lines+markers', name='CRIPD Model AUC', line=dict(color='blue')
+        ))
+        fig_auc.add_trace(go.Scatter(
+            x=df_auc_ml['date'], y=df_auc_ml['auc_score_ml'],
+            mode='lines+markers', name='LightGBM Model AUC', line=dict(color='red')
+        ))
+        fig_auc.update_layout(title=f"AUC Score Over Time (Horizon = {horizon} month(s))",
+                              xaxis_title='Date', yaxis_title='AUC', hovermode='x unified')
+        st.plotly_chart(fig_auc, use_container_width=True)
+
+        st.markdown("### 📉 PR AUC Score Comparison")
+        fig_pr = go.Figure()
+        fig_pr.add_trace(go.Scatter(
+            x=df['date'], y=df['pr_auc_cripd'],
+            mode='lines+markers', name='CRIPD Model PR AUC', line=dict(color='green')
+        ))
+        fig_pr.add_trace(go.Scatter(
+            x=df['date'], y=df['pr_auc_ml'],
+            mode='lines+markers', name='LightGBM Model PR AUC', line=dict(color='orange')
+        ))
+        fig_pr.update_layout(title=f"PR AUC Score Over Time (Horizon = {horizon} month(s))",
+                             xaxis_title='Date', yaxis_title='PR AUC', hovermode='x unified')
+        st.plotly_chart(fig_pr, use_container_width=True)
+
+        st.markdown("### 🧪 Test Positives Over Time (ML Model)")
+        fig_bar = go.Figure()
+        fig_bar.add_trace(go.Bar(
+            x=df['date'], y=df['test_positives'],
+            name='Test Positives', marker_color='crimson'
+        ))
+        fig_bar.update_layout(title=f"Test Positives Over Time (Horizon = {horizon} month(s))",
+                              xaxis_title='Date', yaxis_title='Test Positives', hovermode='x unified')
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+        with st.expander("📊 Summary Statistics"):
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric(f"CRIPD AUC (Mean, {horizon}M)", f"{df['auc_score_cripd'].mean():.4f}")
+                st.metric(f"CRIPD PR AUC (Mean, {horizon}M)", f"{df['pr_auc_cripd'].mean():.4f}")
+            with col2:
+                st.metric(f"ML AUC (Mean, {horizon}M)", f"{df['auc_score_ml'].mean():.4f}")
+                st.metric(f"ML PR AUC (Mean, {horizon}M)", f"{df['pr_auc_ml'].mean():.4f}")
+    
 
 def main():
     """Main application function"""
@@ -618,7 +812,7 @@ def main():
     st.sidebar.title("🧭 Navigation")
     page = st.sidebar.selectbox(
         "Select Page:",
-        ["🏠 Home", "🎯 Individual Predictions", "🗺️📊 Metrics by Country"]
+        ["🏠 Home", "🎯 Individual Predictions", "🗺️📊 Metrics by Country", "📊 Model Performance Monitoring"]
     )
 
     # Add refresh button
@@ -632,6 +826,8 @@ def main():
         dashboard.render_individual_predictions()
     elif page == "🗺️📊 Metrics by Country":
         dashboard.render_metrics_by_country()
+    elif page == "📊 Model Performance Monitoring":
+        dashboard.display_model_performance()
 
     # Footer
     st.sidebar.markdown("---")

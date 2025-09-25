@@ -5,8 +5,8 @@ import pymysql
 
 class MySQLConnection:
 
-    MYSQL_USER = MysqlConfig.MYSQL_USERNAME
-    MYSQL_PASSWORD = MysqlConfig.MYSQL_PASSWORD
+    MYSQL_USER = MysqlConfig.MYSQL_USER
+    MYSQL_PASSWORD = MysqlConfig.MYSQL_PASS
     MYSQL_HOST = MysqlConfig.MYSQL_HOST  # or your remote host/IP
     MYSQL_PORT = MysqlConfig.MYSQL_PORT
 
