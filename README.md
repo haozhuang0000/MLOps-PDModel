@@ -62,7 +62,7 @@ src/
 │   ├── evaluation/                # Model evaluation metrics
 │   ├── database/                  # Database connections
 │   └── configs/                   # Configuration management
-├── modeldev/                      # Model development and research
+├── modeldev/                      # Model development and research -->> This is for backtesting results comparison between lightgbm and CRI PD
 │   ├── model/                     # LightGBM classifier implementations
 │   │   ├── lgbm_classifier.py     # Monthly PD model
 │   │   └── lgbm_classifier_yearly.py # Yearly PD model
