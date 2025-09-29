@@ -7,7 +7,8 @@ ENV AIRFLOW_HOME=/opt/airflow
 WORKDIR $AIRFLOW_HOME
 
 RUN apt-get update && apt-get install -y libgomp1
-
+RUN mkdir -p /opt/airflow/logs \
+    && chown -R airflow: /opt/airflow
 USER airflow
 
 COPY requirements.txt .
